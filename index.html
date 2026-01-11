@@ -2,6 +2,13 @@
 <html>
 <head>
   <title>My Website</title>
+  <style>
+    canvas {
+      background: black;
+      display: block;
+      margin: 20px auto;
+    }
+  </style>
 </head>
 <body>
 
@@ -14,8 +21,9 @@
 
   <br><br>
 
+  <!-- Image section -->
   <img
-    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrVEh4R8Bkt7nukP0qvTKEzXTilwHu76kIgg&s"
+    src="ps5.jpg"
     id="PS5"
     alt="PS5"
     width="500"
@@ -27,7 +35,14 @@
   <button onclick="hideImage()">Hide Image</button>
   <button onclick="showImage()">Show Image</button>
 
+  <!-- Pong Game -->
+  <h2 style="text-align:center;">Ping Pong Game</h2>
+  <p style="text-align:center;">Use ↑ and ↓ keys</p>
+
+  <canvas id="game" width="600" height="400"></canvas>
+
   <script>
+    // Image functions
     function hideImage() {
       document.getElementById("PS5").style.display = "none";
     }
@@ -35,6 +50,70 @@
     function showImage() {
       document.getElementById("PS5").style.display = "block";
     }
+
+    // Pong game
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    let paddleY = 150;
+    const paddleHeight = 80;
+    const paddleWidth = 10;
+
+    let ballX = 300;
+    let ballY = 200;
+    let ballSpeedX = 4;
+    let ballSpeedY = 4;
+    const ballSize = 10;
+
+    // Keyboard controls
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp" && paddleY > 0) paddleY -= 20;
+      if (e.key === "ArrowDown" && paddleY < canvas.height - paddleHeight) paddleY += 20;
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Paddle
+      ctx.fillStyle = "white";
+      ctx.fillRect(20, paddleY, paddleWidth, paddleHeight);
+
+      // Ball
+      ctx.fillRect(ballX, ballY, ballSize, ballSize);
+
+      // Move ball
+      ballX += ballSpeedX;
+      ballY += ballSpeedY;
+
+      // Bounce top/bottom
+      if (ballY <= 0 || ballY >= canvas.height - ballSize) {
+        ballSpeedY *= -1;
+      }
+
+      // Paddle collision
+      if (
+        ballX <= 30 &&
+        ballY > paddleY &&
+        ballY < paddleY + paddleHeight
+      ) {
+        ballSpeedX *= -1;
+      }
+
+      // Reset if missed
+      if (ballX < 0) {
+        ballX = 300;
+        ballY = 200;
+      }
+
+      // Bounce right wall
+      if (ballX > canvas.width - ballSize) {
+        ballSpeedX *= -1;
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
   </script>
 
 </body>
