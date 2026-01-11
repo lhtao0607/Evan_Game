@@ -2,7 +2,6 @@
 <html>
 <head>
   <title>My Website</title>
-
   <style>
     body {
       text-align: center;
@@ -17,134 +16,125 @@
     }
   </style>
 </head>
-
 <body>
 
-  <h1>Hello, Evan and Mason!</h1>
-  <p>This site is hosted on GitHub Pages.</p>
+<h1>Hello, Evan and Mason!</h1>
+<p>This site is hosted on GitHub Pages.</p>
 
-  <button onclick="window.location.href='https://www.crazygames.com'">
-    Play Games
-  </button>
+<button onclick="window.location.href='https://www.crazygames.com'">Play Games</button>
 
-  <br><br>
+<br><br>
 
-  <!-- PS5 Image -->
-  <img
-    src="ps5.jpg"
-    id="PS5"
-    alt="PS5"
-    width="500"
-    height="333"
-  >
+<!-- PS5 Image -->
+<img src="ps5.jpg" id="PS5" alt="PS5" width="500" height="333">
+<br><br>
+<button onclick="hideImage()">Hide Image</button>
+<button onclick="showImage()">Show Image</button>
 
-  <br><br>
+<hr>
 
-  <button onclick="hideImage()">Hide Image</button>
-  <button onclick="showImage()">Show Image</button>
+<!-- Tank Game -->
+<h2>Tank Game 🚓</h2>
+<p>Use Arrow Keys to Move • Space to Shoot Aliens</p>
+<canvas id="game" width="600" height="400"></canvas>
 
-  <hr>
+<script>
+  /* IMAGE FUNCTIONS */
+  function hideImage() { document.getElementById("PS5").style.display = "none"; }
+  function showImage() { document.getElementById("PS5").style.display = "block"; }
 
-  <!-- Tank Game -->
-  <h2>Tank Game 🚓</h2>
-  <p>Use Arrow Keys to Move • Space to Shoot</p>
+  /* TANK GAME */
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
 
-  <canvas id="game" width="600" height="400"></canvas>
+  const tank = { x: 280, y: 350, size: 30, speed: 4 };
+  const bullets = [];
+  const keys = {};
 
-  <script>
-    /* IMAGE FUNCTIONS */
-    function hideImage() {
-      document.getElementById("PS5").style.display = "none";
-    }
-
-    function showImage() {
-      document.getElementById("PS5").style.display = "block";
-    }
-
-    /* TANK GAME */
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-
-    const tank = {
-      x: 280,
-      y: 180,
-      size: 30,
-      speed: 4
-    };
-
-    const enemy = {
-      x: 100,
-      y: 100,
+  // Aliens
+  const aliens = [];
+  const alienCount = 5;
+  for (let i = 0; i < alienCount; i++) {
+    aliens.push({
+      x: Math.random() * 550,
+      y: Math.random() * 200,
       size: 30
-    };
-
-    let bullets = [];
-    const keys = {};
-
-    document.addEventListener("keydown", e => {
-      keys[e.key] = true;
-
-      if (e.key === " ") {
-        bullets.push({
-          x: tank.x + tank.size / 2 - 3,
-          y: tank.y,
-          speed: 6
-        });
-      }
     });
+  }
 
-    document.addEventListener("keyup", e => {
-      keys[e.key] = false;
-    });
-
-    function update() {
-      if (keys["ArrowUp"] && tank.y > 0) tank.y -= tank.speed;
-      if (keys["ArrowDown"] && tank.y < canvas.height - tank.size) tank.y += tank.speed;
-      if (keys["ArrowLeft"] && tank.x > 0) tank.x -= tank.speed;
-      if (keys["ArrowRight"] && tank.x < canvas.width - tank.size) tank.x += tank.speed;
-
-      bullets.forEach(b => b.y -= b.speed);
-
-      bullets = bullets.filter(b => {
-        if (
-          b.x > enemy.x &&
-          b.x < enemy.x + enemy.size &&
-          b.y > enemy.y &&
-          b.y < enemy.y + enemy.size
-        ) {
-          enemy.x = Math.random() * (canvas.width - enemy.size);
-          enemy.y = Math.random() * (canvas.height - enemy.size);
-          return false;
-        }
-        return b.y > 0;
+  // Keyboard controls
+  document.addEventListener("keydown", e => {
+    keys[e.key] = true;
+    if (e.key === " ") {
+      bullets.push({
+        x: tank.x + tank.size / 2 - 3,
+        y: tank.y,
+        speed: 6
       });
     }
+  });
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.addEventListener("keyup", e => { keys[e.key] = false; });
 
-      // Tank
-      ctx.fillStyle = "green";
-      ctx.fillRect(tank.x, tank.y, tank.size, tank.size);
-      ctx.fillRect(tank.x + 12, tank.y - 10, 6, 10);
+  function update() {
+    // Move tank
+    if (keys["ArrowUp"] && tank.y > 0) tank.y -= tank.speed;
+    if (keys["ArrowDown"] && tank.y < canvas.height - tank.size) tank.y += tank.speed;
+    if (keys["ArrowLeft"] && tank.x > 0) tank.x -= tank.speed;
+    if (keys["ArrowRight"] && tank.x < canvas.width - tank.size) tank.x += tank.speed;
 
-      // Enemy
-      ctx.fillStyle = "red";
-      ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+    // Move bullets
+    bullets.forEach(b => b.y -= b.speed);
 
-      // Bullets
-      ctx.fillStyle = "yellow";
-      bullets.forEach(b => ctx.fillRect(b.x, b.y, 6, 10));
+    // Collision detection for aliens
+    bullets.forEach((b, bi) => {
+      aliens.forEach((alien, ai) => {
+        if (
+          b.x > alien.x &&
+          b.x < alien.x + alien.size &&
+          b.y > alien.y &&
+          b.y < alien.y + alien.size
+        ) {
+          // Remove bullet
+          bullets.splice(bi, 1);
+          // Respawn alien
+          alien.x = Math.random() * (canvas.width - alien.size);
+          alien.y = Math.random() * 200;
+        }
+      });
+    });
+
+    // Remove off-screen bullets
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      if (bullets[i].y < 0) bullets.splice(i, 1);
     }
+  }
 
-    function loop() {
-      update();
-      draw();
-      requestAnimationFrame(loop);
-    }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    loop();
-  </script>
+    // Draw tank
+    ctx.fillStyle = "green";
+    ctx.fillRect(tank.x, tank.y, tank.size, tank.size);
+    ctx.fillRect(tank.x + 12, tank.y - 10, 6, 10); // gun
+
+    // Draw aliens
+    ctx.fillStyle = "red";
+    aliens.forEach(alien => ctx.fillRect(alien.x, alien.y, alien.size, alien.size));
+
+    // Draw bullets
+    ctx.fillStyle = "yellow";
+    bullets.forEach(b => ctx.fillRect(b.x, b.y, 6, 10));
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+</script>
 
 </body>
 </html>
