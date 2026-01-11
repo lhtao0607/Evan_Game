@@ -6,6 +6,8 @@
     body {
       text-align: center;
       font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
     }
 
     canvas {
@@ -13,6 +15,16 @@
       display: block;
       margin: 20px auto;
       border: 2px solid white;
+    }
+
+    h1, h2, p {
+      margin: 10px 0;
+    }
+
+    button {
+      margin: 5px;
+      padding: 8px 15px;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -34,9 +46,10 @@
 <hr>
 
 <!-- Tank Game -->
-<h2>Tank Game 🚓</h2>
-<p>Use Arrow Keys to Move • Space to Shoot Aliens</p>
+<h2>Tank vs Aliens 🚀</h2>
+<p>Arrow Keys to Move • Space to Shoot</p>
 <canvas id="game" width="600" height="400"></canvas>
+<h3>Score: <span id="score">0</span></h3>
 
 <script>
   /* IMAGE FUNCTIONS */
@@ -47,29 +60,44 @@
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
 
-  const tank = { x: 280, y: 350, size: 30, speed: 4 };
+  // Tank object
+  const tank = {
+    x: 280,
+    y: 350,
+    width: 40,
+    height: 20,
+    turretLength: 20,
+    speed: 4,
+    turretAngle: 0
+  };
+
   const bullets = [];
   const keys = {};
 
+  let score = 0;
+  const scoreDisplay = document.getElementById("score");
+
   // Aliens
   const aliens = [];
-  const alienCount = 5;
+  const alienCount = 6;
   for (let i = 0; i < alienCount; i++) {
     aliens.push({
-      x: Math.random() * 550,
-      y: Math.random() * 200,
-      size: 30
+      x: Math.random() * 560,
+      y: Math.random() * 150,
+      size: 30,
+      speedY: 1 + Math.random() * 1.5
     });
   }
 
   // Keyboard controls
   document.addEventListener("keydown", e => {
     keys[e.key] = true;
+
     if (e.key === " ") {
       bullets.push({
-        x: tank.x + tank.size / 2 - 3,
+        x: tank.x + tank.width/2 - 3,
         y: tank.y,
-        speed: 6
+        speed: 7
       });
     }
   });
@@ -77,46 +105,69 @@
   document.addEventListener("keyup", e => { keys[e.key] = false; });
 
   function update() {
-    // Move tank
+    // Tank movement
     if (keys["ArrowUp"] && tank.y > 0) tank.y -= tank.speed;
-    if (keys["ArrowDown"] && tank.y < canvas.height - tank.size) tank.y += tank.speed;
+    if (keys["ArrowDown"] && tank.y < canvas.height - tank.height) tank.y += tank.speed;
     if (keys["ArrowLeft"] && tank.x > 0) tank.x -= tank.speed;
-    if (keys["ArrowRight"] && tank.x < canvas.width - tank.size) tank.x += tank.speed;
+    if (keys["ArrowRight"] && tank.x < canvas.width - tank.width) tank.x += tank.speed;
 
     // Move bullets
     bullets.forEach(b => b.y -= b.speed);
 
-    // Collision detection for aliens
+    // Move aliens down
+    aliens.forEach(alien => {
+      alien.y += alien.speedY;
+      if (alien.y > canvas.height) {
+        alien.y = 0;
+        alien.x = Math.random() * (canvas.width - alien.size);
+      }
+    });
+
+    // Bullet collisions with aliens
     bullets.forEach((b, bi) => {
       aliens.forEach((alien, ai) => {
         if (
-          b.x > alien.x &&
+          b.x + 6 > alien.x &&
           b.x < alien.x + alien.size &&
-          b.y > alien.y &&
-          b.y < alien.y + alien.size
+          b.y < alien.y + alien.size &&
+          b.y + 10 > alien.y
         ) {
           // Remove bullet
           bullets.splice(bi, 1);
           // Respawn alien
           alien.x = Math.random() * (canvas.width - alien.size);
-          alien.y = Math.random() * 200;
+          alien.y = 0;
+          // Add score
+          score += 1;
+          scoreDisplay.textContent = score;
         }
       });
     });
 
-    // Remove off-screen bullets
+    // Remove bullets off screen
     for (let i = bullets.length - 1; i >= 0; i--) {
       if (bullets[i].y < 0) bullets.splice(i, 1);
     }
+  }
+
+  function drawTank() {
+    // Tank body
+    ctx.fillStyle = "green";
+    ctx.fillRect(tank.x, tank.y, tank.width, tank.height);
+
+    // Tank turret
+    ctx.fillStyle = "lime";
+    ctx.save();
+    ctx.translate(tank.x + tank.width/2, tank.y);
+    ctx.fillRect(-3, -tank.turretLength, 6, tank.turretLength);
+    ctx.restore();
   }
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw tank
-    ctx.fillStyle = "green";
-    ctx.fillRect(tank.x, tank.y, tank.size, tank.size);
-    ctx.fillRect(tank.x + 12, tank.y - 10, 6, 10); // gun
+    drawTank();
 
     // Draw aliens
     ctx.fillStyle = "red";
